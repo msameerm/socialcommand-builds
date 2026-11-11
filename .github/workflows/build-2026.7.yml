@@ -1,0 +1,98 @@
+name: build-2026.6
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - name: Enable long paths (before checkout)
+        run: git config --system core.longpaths true
+      - name: Checkout client (tag 2026.6)
+        uses: actions/checkout@v4
+        with:
+          repository: msameerm/mullvadvpn-app
+          ref: 2026.6
+          submodules: recursive
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+      - name: Setup Rust
+        shell: bash
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-host x86_64-pc-windows-msvc
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          "$HOME/.cargo/bin/rustup" default stable-x86_64-pc-windows-msvc
+          "$HOME/.cargo/bin/rustup" target add i686-pc-windows-msvc aarch64-pc-windows-msvc
+      - name: Install protoc
+        run: |
+          choco install protoc -y --no-progress
+          echo "PROTOC=$env:ChocolateyInstall\bin\protoc.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - name: Build installer
+        shell: bash
+        run: ./build.sh --optimize
+        env:
+          MULLVAD_ADD_MANIFEST: '1'
+      - name: List artifacts
+        if: always()
+        run: Get-ChildItem dist
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: SocialCommandVPN-windows-2026.6
+          path: dist/*.exe
+          if-no-files-found: error
+
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout client (tag 2026.6)
+        uses: actions/checkout@v4
+        with:
+          repository: msameerm/mullvadvpn-app
+          ref: 2026.6
+          submodules: recursive
+          fetch-depth: 0
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config curl git ca-certificates \
+            libdbus-1-dev libmnl-dev libnftnl-dev libssl-dev \
+            libgtk-3-dev libnotify-dev libayatana-appindicator3-dev librsvg2-dev \
+            protobuf-compiler libprotobuf-dev rpm ruby-full
+          sudo gem install fpm --no-document
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Setup Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - name: Build Linux packages
+        run: ./build.sh --optimize
+        env:
+          SOURCE_DATE_EPOCH: "1735689600"
+          PROTOC_INCLUDE: /usr/include
+      - name: List artifacts
+        if: always()
+        run: ls -la dist/ || true
+      - name: Upload Linux packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: SocialCommandVPN-linux-2026.6
+          path: |
+            dist/*.deb
+            dist/*.rpm
+          if-no-files-found: error

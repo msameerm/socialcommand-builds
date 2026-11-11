@@ -1,4 +1,4 @@
-name: build-2026.6
+name: build-2026.7
 
 on:
   workflow_dispatch:
@@ -13,11 +13,11 @@ jobs:
     steps:
       - name: Enable long paths (before checkout)
         run: git config --system core.longpaths true
-      - name: Checkout client (tag 2026.6)
+      - name: Checkout client (tag 2026.7)
         uses: actions/checkout@v4
         with:
           repository: msameerm/mullvadvpn-app
-          ref: 2026.6
+          ref: 2026.7
           submodules: recursive
           fetch-depth: 0
       - name: Setup Node.js
@@ -48,7 +48,7 @@ jobs:
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: SocialCommandVPN-windows-2026.6
+          name: SocialCommandVPN-windows-2026.7
           path: dist/*.exe
           if-no-files-found: error
 
@@ -56,11 +56,11 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
-      - name: Checkout client (tag 2026.6)
+      - name: Checkout client (tag 2026.7)
         uses: actions/checkout@v4
         with:
           repository: msameerm/mullvadvpn-app
-          ref: 2026.6
+          ref: 2026.7
           submodules: recursive
           fetch-depth: 0
       - name: Install system dependencies
@@ -91,7 +91,7 @@ jobs:
       - name: Upload Linux packages
         uses: actions/upload-artifact@v4
         with:
-          name: SocialCommandVPN-linux-2026.6
+          name: SocialCommandVPN-linux-2026.7
           path: |
             dist/*.deb
             dist/*.rpm
