@@ -25,15 +25,17 @@ jobs:
         with:
           node-version: '22'
       - name: Setup Rust
+        shell: bash
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
-          echo "$HOME/.cargo/bin" | Out-File -FilePath $env:GITHUB_PATH -Append
-          rustup target add i686-pc-windows-msvc aarch64-pc-windows-msvc
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          "$HOME/.cargo/bin/rustup" target add i686-pc-windows-msvc aarch64-pc-windows-msvc
       - name: Install protoc
         run: |
           choco install protoc -y --no-progress
           echo "PROTOC=$env:ChocolateyInstall\bin\protoc.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
       - name: Build installer
+        shell: bash
         run: ./build.sh --optimize
         env:
           MULLVAD_ADD_MANIFEST: '1'
